@@ -5,6 +5,16 @@
   boot.supportedFilesystems = ["zfs"];
   boot.zfs.forceImportRoot = false;
   networking.hostId = "7bfb60f7";
+  users.defaultUserShell = pkgs.bash;
+  environment.variables = {
+    VDEV_MAX = "10";
+};
+  environment.sessionVariables = {
+    VDEV_MAX = "7";
+};
+  home.sessionVariables = {
+    VDEV_MAX = "7";
+};
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
     environment.systemPackages = with pkgs; [ (python3.withPackages(ps: with ps; [
     numpy
