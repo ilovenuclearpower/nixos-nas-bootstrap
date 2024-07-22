@@ -20,7 +20,6 @@ disks=$(lsblk -o NAME,TYPE,TRAN | awk '$2 == "disk" {print}' | awk -v interface=
 for disk in $disks; do
     # Attempt to open the partition table of the disk device with partx
     sudo partx -v /dev/$disk > /dev/null 2>&1
-    
     # Check the exit status of partx
     if [ $? -ne 0 ]; then
         unpartitioned_drives+="/dev/$disk:"
@@ -32,6 +31,8 @@ done
 }
 
 function create_zfs_pools() {
+    source "/etc/bootstrap"
+    echo ${VDEV_MAX}
     nvme_disks=""
     sata_disks=""
     check_zfs_pools
@@ -49,8 +50,70 @@ function create_zfs_pools() {
     IFS=':' read -ra SATA_DISKS <<< "$sata_disks"
     IFS=':' read -ra NVME_DISKS <<< "$nvme_disks"
     sata_count=${#SATA_DISKS[@]}
-    echo ${SATA_DISKS[@]}
     nvme_count=${#NVME_DISKS[@]}
+    added_disks=()
     echo $sata_count
+    for value in "${SATA_DISKS[@]}"; do
+        added_disks+=("$value")
+        if [[ ${#added_disks[@]} -ge ${VDEV_MAX} ]]; then
+            echo "Reached maximum size"
+	    all_devices=$(IFS=" "; echo "${added_disks[@]:0:(($VDEV_MAX - 1))}")
+	    IFS=' ' read -ra devices <<< "$all_devices"
+	    unset IFS
+            echo "Check device counts"	    
+	    echo ${devices[@]}
+            echo ${added_disks[-1]}
+	    if ! zpool list galaxy > /dev/null 2>&1; then
+		echo "Atempting to create first galaxy vdev"
+                zpool create galaxy raidz2 ${devices[@]}
+	        zpool add galaxy spare ${added_disks[-1]}
+	    else
+		echo "Attempting to add new vdev"
+		zpool add galaxy raidz2 ${devices[@]}
+		zpool add galaxy spare ${added_disks[-1]}
+	    fi
+            added_disks=()
+        fi
+    done
+    echo ${#added_disks[@]}
+    if [ "${#added_disks[@]}" -le 6 ]; then
+        echo "Smaller pool than required for raidz2"
+	echo ${added_disks[@]}
+	len=${#added_disks[@]}
+	last_index=$((len - 1))
+        for ((i=0; i<=$last_index; i+=2)); do
+            device1=${added_disks[i]}
+	    device2=${added_disks[(i+1)]}
+	    echo $i
+	    echo ${#added_disks[@]}
+	    if [ $i -lt $last_index ]; then
+		echo "Two drives detected, mirror configuration"
+                echo $device1 $device2
+		zpool add -f galaxy mirror $device1 $device2
+            else
+		echo "One drive detected, adding spare"
+                echo $device1
+		zpool add -f galaxy spare $device1
+            fi
+	done
+    else
+        echo "bigger than required"
+	spare_vdev=$(IFS=" "; echo "${added_disks[*]}")
+	echo $spare_vdev
+	zpool add galaxy raidz2 $spare_vdev
+    fi
+    for value in "${NVME_DISKS[@]}"; do
+        echo $value
+	zpool add galaxy cache $value
+    done
 }
 create_zfs_pools
+# Create the 'apps' dataset with a record size of 4K
+sudo zfs create -o mountpoint=legacy -o recordsize=4096 galaxy/apps
+
+# Create the 'media' dataset with a record size of 512K
+sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy/media
+
+# Create the 'files' dataset with a record size of 32K
+sudo zfs create -o mountpoint=legacy -o recordsize=524288  galaxy/files
+sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy/nix

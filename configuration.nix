@@ -7,14 +7,44 @@
   networking.hostId = "7bfb60f7";
   users.defaultUserShell = pkgs.bash;
   environment.variables = {
-    VDEV_MAX = "10";
+    VDEV_MAX = "7";
 };
   environment.sessionVariables = {
     VDEV_MAX = "7";
 };
-  home.sessionVariables = {
-    VDEV_MAX = "7";
+  environment.etc = {
+    bootstrap = {
+    text = "VDEV_MAX=12";
+    mode = "666";
 };
+};
+  fileSystems = {
+    "/galaxy" = {
+      device = "galaxy";
+      fsType = "zfs";
+    };
+
+    "/apps" = {
+      device = "galaxy/apps";
+      fsType = "zfs";
+    };
+
+    "/files" = {
+      device = "galaxy/files";
+      fsType = "zfs";
+    };
+
+    "/media" = {
+      device = "galaxy/media";
+      fsType = "zfs";
+    };
+
+    "/nix-system" = {
+      device = "galaxy/nix";
+      fsType = "zfs";
+    };
+  };
+
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
     environment.systemPackages = with pkgs; [ (python3.withPackages(ps: with ps; [
     numpy
@@ -31,9 +61,18 @@
 ##    doCheck = false;
 ##  })
   ]))
-   git
-   vim
+    git
+    vim
+#    buildEnv {
+#      name = "bootstrap-env";
+#      paths = [ (pkgs.writeTextFile {
+#        name = "bootstrap.txt";
+#        text = "VDEV_MAX=7";
+#        destination = "/etc/bootstrap/vars.txt";
+#})];
+#}
 ];
+
 
 
 
