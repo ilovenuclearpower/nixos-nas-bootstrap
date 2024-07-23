@@ -65,12 +65,12 @@ function create_zfs_pools() {
             echo ${added_disks[-1]}
 	    if ! zpool list galaxy > /dev/null 2>&1; then
 		echo "Atempting to create first galaxy vdev"
-                zpool create galaxy raidz2 ${devices[@]}
-	        zpool add galaxy spare ${added_disks[-1]}
+                zpool create galaxy-$(hostname) raidz2 ${devices[@]}
+	        zpool add galaxy-$(hostname) spare ${added_disks[-1]}
 	    else
 		echo "Attempting to add new vdev"
-		zpool add galaxy raidz2 ${devices[@]}
-		zpool add galaxy spare ${added_disks[-1]}
+		zpool add galaxy-$(hostname) raidz2 ${devices[@]}
+		zpool add galaxy-$(hostname) spare ${added_disks[-1]}
 	    fi
             added_disks=()
         fi
@@ -89,31 +89,33 @@ function create_zfs_pools() {
 	    if [ $i -lt $last_index ]; then
 		echo "Two drives detected, mirror configuration"
                 echo $device1 $device2
-		zpool add -f galaxy mirror $device1 $device2
+		zpool add -f galaxy-$(hostname) mirror $device1 $device2
             else
 		echo "One drive detected, adding spare"
                 echo $device1
-		zpool add -f galaxy spare $device1
+		zpool add -f galaxy-$(hostname) spare $device1
             fi
 	done
     else
         echo "bigger than required"
 	spare_vdev=$(IFS=" "; echo "${added_disks[*]}")
 	echo $spare_vdev
-	zpool add galaxy raidz2 $spare_vdev
+	zpool add galaxy-$(hostname) raidz2 $spare_vdev
     fi
     for value in "${NVME_DISKS[@]}"; do
         echo $value
-	zpool add galaxy cache $value
+	zpool add galaxy-$(hostname) cache $value
     done
 }
 create_zfs_pools
 # Create the 'apps' dataset with a record size of 4K
-sudo zfs create -o mountpoint=legacy -o recordsize=4096 galaxy/apps
+sudo zfs create -o mountpoint=legacy -o recordsize=4096 galaxy-$(hostname)/apps
 
 # Create the 'media' dataset with a record size of 512K
-sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy/media
+sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/media
 
 # Create the 'files' dataset with a record size of 32K
-sudo zfs create -o mountpoint=legacy -o recordsize=524288  galaxy/files
-sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy/nix
+sudo zfs create -o mountpoint=legacy -o recordsize=524288  galaxy-$(hostname)/files
+sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/nix
+sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/frontier
+sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/wilds

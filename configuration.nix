@@ -19,28 +19,31 @@
 };
 };
   fileSystems = {
-    "/galaxy" = {
-      device = "galaxy";
-      fsType = "zfs";
-    };
-
     "/apps" = {
-      device = "galaxy/apps";
+      device = "galaxy-${config.networking.hostName}/apps";
       fsType = "zfs";
     };
 
     "/files" = {
-      device = "galaxy/files";
+      device = "galaxy-${config.networking.hostName}/files";
       fsType = "zfs";
     };
 
     "/media" = {
-      device = "galaxy/media";
+      device = "galaxy-${config.networking.hostName}/media";
       fsType = "zfs";
     };
 
-    "/nix-system" = {
-      device = "galaxy/nix";
+   "/nix-system" = {
+      device = "galaxy-${config.networking.hostName}/nix";
+      fsType = "zfs";
+    };
+    "/frontier" = {
+      device = "galaxy-${config.networking.hostName}/frontier";
+      fsType = "zfs";
+    };
+    "/wilds" = {
+      device = "galaxy-${config.networking.hostName}/wilds";
       fsType = "zfs";
     };
   };
@@ -78,7 +81,7 @@
 
 
   # Let demo build as a trusted user.
-# nix.settings.trusted-users = [ "demo" ];
+ nix.settings.trusted-users = [ "demo" ];
 
 # Mount a VirtualBox shared folder.
 # This is configurable in the VirtualBox menu at
@@ -109,6 +112,6 @@
 # ];
 
 # Enable the OpenSSH daemon.
-# services.openssh.enable = true;
+ services.openssh.enable = true;
 
 }
