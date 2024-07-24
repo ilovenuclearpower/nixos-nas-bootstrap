@@ -17,47 +17,58 @@ let
 
     # Define the usergroups allowed to access the shares
     privateUserGroups = [ "ranka" "frontier" "apps" ];
-    publicUserGroup = [ "wilds" "media" ];
+    publicUserGroups  = [ "wilds" "media" ];
     systemUserGroups = [ "ranka" "wheel" ];
     # Generate the NFS exports configuration
-    nfsExports = builtins.concatMap (share: ''
+    nfsExports = builtins.concatStringsSep "\n" (map (share: ''
         ${share.path} *(rw,sync,no_subtree_check,no_root_squash)
-    '') (publicFileSystems ++ privateFileSystems);
+    '') (publicFileSystems ++ privateFileSystems));
 
     # Generate the Samba shares configuration
-    publicShares = builtins.concatMap (share: ''
-        [${share.name}]
-            path = ${share.path}
-            read only = no
-            guest ok = yes
-            browseable = yes
-            valid users = @${publicUserGroups} @${systemUserGroups}
-            force group = ${share.name}
-    '') publicFileSystems;
-    privateShares = builtins.concatMap (share: ''
-        [${share.name}]
-            path = ${share.path}
-            read only = no
-            guest ok = no
-            browseable = yes
-            valid users = @${privateUserGroups} @${systemUserGroups}
-            force group = ${share.name}
-    '') privateFileSystems;
+    publicShares = builtins.listToAttrs (map (share: {
+            name = share.name;
+            value = {
+            path = "${share.path}";
+            "read only" = "no";
+            "guest ok" = "yes";
+            "valid users" = builtins.concatStringsSep " " (map (group: "@${group}") (privateUserGroups ++ systemUserGroups));
+            "force group" = "${share.name}";
+            };
+    }) publicFileSystems);
+    privateShares = builtins.listToAttrs (map (share: {
+            name = share.name;
+            value = {
+            path = "${share.path}";
+            "read only" = "no";
+            "guest ok" = "no";
+            "browseable" = "yes";
+            "valid users" = builtins.concatStringsSep " " (map (group: "@${group}") (privateUserGroups ++ systemUserGroups));
+            "force group" = "${share.name}";
+            };
+    }
+    ) privateFileSystems);
 in
 {   
     # Add the NFS exports configuration
-    services.nfs = {
+    services.nfs.server = {
         enable = true;
         exports = nfsExports;
-    };
+   };
 
     # Add the Samba shares configuration
     services.samba = {
+    extraConfig = ''
+        workgroup = TEST
+        server string = nixsamba
+        netbios name = nixsamba
+        security = user 
+        hosts allow = 192.168.10. 192.168.20. 127.0.0.1 localhost
+        hosts deny = 0.0.0.0/0
+        guest account = nobody
+        map to guest = bad user
+    '';
         enable = true;
-        shares = {
-          public = publicShares;
-          private = privateShares;
-        };
+        shares = publicShares;
     };
     services.samba-wsdd = {
         enable = true;
