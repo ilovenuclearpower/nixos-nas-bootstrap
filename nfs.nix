@@ -32,6 +32,7 @@ let
             "guest ok" = "yes";
             "create mask" = "0644";
             "directory mask" = "0755";
+            "browseable" = "yes";
             "valid users" = builtins.concatStringsSep " " (map (group: "@${group}") (publicUserGroups ++ privateUserGroups ++ systemUserGroups));
             "force group" = "${share.name}";
             };
