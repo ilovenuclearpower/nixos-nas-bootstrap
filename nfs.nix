@@ -30,7 +30,7 @@ let
             path = "${share.path}";
             "read only" = "no";
             "guest ok" = "yes";
-            "valid users" = builtins.concatStringsSep " " (map (group: "@${group}") (privateUserGroups ++ systemUserGroups));
+            "valid users" = builtins.concatStringsSep " " (map (group: "@${group}") (publicUserGroups ++ privateUserGroups ++ systemUserGroups));
             "force group" = "${share.name}";
             };
     }) publicFileSystems);
@@ -58,8 +58,8 @@ in
     services.samba = {
     extraConfig = ''
         workgroup = TEST
-        server string = nixsamba
-        netbios name = nixsamba
+        server string = ${config.networking.hostName}
+        netbios name = ${config.networking.hostName}
         security = user 
         hosts allow = 192.168.10. 192.168.20. 127.0.0.1 localhost
         hosts deny = 0.0.0.0/0
@@ -67,7 +67,7 @@ in
         map to guest = bad user
     '';
         enable = true;
-        shares = publicShares;
+        shares = publicShares // privateShares;
     };
     services.samba-wsdd = {
         enable = true;

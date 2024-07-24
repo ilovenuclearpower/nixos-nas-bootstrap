@@ -66,6 +66,7 @@
   ]))
     git
     vim
+    talosctl
 #    buildEnv {
 #      name = "bootstrap-env";
 #      paths = [ (pkgs.writeTextFile {
