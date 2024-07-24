@@ -30,6 +30,8 @@ let
             path = "${share.path}";
             "read only" = "no";
             "guest ok" = "yes";
+            "create mask" = "0644";
+            "directory mask" = "0755";
             "valid users" = builtins.concatStringsSep " " (map (group: "@${group}") (publicUserGroups ++ privateUserGroups ++ systemUserGroups));
             "force group" = "${share.name}";
             };
@@ -41,6 +43,8 @@ let
             "read only" = "no";
             "guest ok" = "no";
             "browseable" = "yes";
+            "create mask" = "0644";
+            "directory mask" = "0755";
             "valid users" = builtins.concatStringsSep " " (map (group: "@${group}") (privateUserGroups ++ systemUserGroups));
             "force group" = "${share.name}";
             };
