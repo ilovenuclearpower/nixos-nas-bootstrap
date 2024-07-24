@@ -5,7 +5,6 @@
 let
     # Define the directories to be shared
     publicFileSystems = [
-        { name = "apps"; path = "/apps"; }
         { name = "media"; path = "/media"; }
         { name = "frontier"; path = "/frontier"; }
     ];
