@@ -8,37 +8,36 @@ let
         "galaxy-${config.networking.hostName}/frontier"
         "galaxy-${config.networking.hostName}/wilds"
     ];
-
-    destinationDirectory = "/path/to/remote/directory";
     ## Replace with your remote backup host
     sshHost = "fm2096.rsync.net";
     sshKeyPath = "/home/ranka/.ssh/id_ed25519";
     sshKeyService = {
         enable = true;
         description = "Generate SSH key for user ranka if it doesn't exist";
+        wantedBy = [ "multi-user.target" ];
         serviceConfig = {
             User = "ranka";
-            ExecStartPre = ''[ -f ${sshKeyPath} ]'';
-            ExecStart = ''
-                ssh-keygen -t ed25519 -f ${sshKeyPath} -N ""
-            '';
+            ExecStart = "/etc/nixos/ranka-ssh-key.sh ${sshKeyPath}";
+            StandardOutput = "journal";
+            StandardError = "journal";
+            Type = "oneshot";
         };
     };
 in
 {
     
-    services.systemd.services.snapshots = {
-        enable = true;
-        description = "ZFS Send Snapshots to remote host";
-        serviceConfig = {
-            ExecStart = ''
-                /etc/nixos/snapshots.sh ${sshHost} ${sshKeyPath} "zfs-auto-snap_hourly" ${sourceDatasets}
-            '';
-            Timer = {
-                OnCalendar = "*-*-* *:00:00";
-                Persistent = true;
-            };
-        };
-    };
-    services.systemd.services.ranka-ssh-key = sshKeyService;
+#    systemd.services.snapshots = {
+#        enable = true;
+#        description = "ZFS Send Snapshots to remote host";
+#        serviceConfig = {
+#            ExecStart = ''
+#                /etc/nixos/snapshots.sh ${sshHost} ${sshKeyPath} "zfs-auto-snap_hourly" "galaxy-${config.networking.hostName}/frontier"
+#            '';
+#            Timer = {
+#                OnCalendar = "*-*-* *:00:00";
+#                Persistent = true;
+#            };
+#        };
+#    };
+    systemd.services.ranka-ssh-key = sshKeyService;
 }

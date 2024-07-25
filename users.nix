@@ -67,8 +67,9 @@ let
        config = {
        initialHashedPassword = "$6$j2o3IhM0GDulXWxi$P4WKsNfgK/OCQKgkZon47Rvx0ocit2JinbCDYb6IeQEwm6PlqypV8qxDB5F1NlETd0lulIWdRR9/ZHYzsyZ9T.";
        extraGroups = [ "frontier" "wilds" "apps" "media" "wheel" ];
-       isNormalUser = false;
-       isSystemUser = true;
+       isNormalUser = true;
+       isSystemUser = false;
+       home = "/home/ranka";
        group = "ranka";
        };
     }
