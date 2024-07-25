@@ -48,6 +48,40 @@
     };
   };
 
+    systemd.services.set-fs-ownership = {
+    description = "Set ownership of file systems";
+    after = [ "local-fs.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      ExecStart = (
+      let
+        fs_map = [
+            {
+            path = "/apps";
+            group = "apps";
+            }
+            {
+            path = "/media";
+            group = "media";
+            }
+            {
+            path = "/frontier";
+            group = "frontier";
+            }
+            {
+            path = "/wilds";
+            group = "wilds";
+            }
+        ];
+        chownCommands = builtins.concatStringsSep " && " (map (fs: "chown -R ranka:${fs.group} ${fs.path}") fs_map);
+      in
+      ''/bin/sh -c "${chownCommands}"''
+      );
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+  };
+
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
     environment.systemPackages = with pkgs; [ (python3.withPackages(ps: with ps; [
     numpy

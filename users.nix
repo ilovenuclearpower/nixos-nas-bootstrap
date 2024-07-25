@@ -83,6 +83,7 @@ let
   ];
 in
 {
+  users.mutableUsers = true;
   users.groups = builtins.listToAttrs (map (group: { name = group.name; value = {}; }) groups);
   users.users = builtins.listToAttrs (map 
   (user: { 

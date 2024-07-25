@@ -58,18 +58,25 @@ in
         enable = true;
         exports = nfsExports;
    };
+    networking.firewall.extraCommands = ''
+        iptables -t raw -A OUTPUT -p udp -m udp --dport 137 -j CT --helper netbios-ns
+        iptables -A INPUT -p tcp --dport 445 -j ACCEPT
+        iptables -A OUTPUT -p tcp --sport 445 -j ACCEPT
+    '';
+
 
     # Add the Samba shares configuration
     services.samba = {
     extraConfig = ''
-        workgroup = TEST
+        workgroup = WORKGROUP
         server string = ${config.networking.hostName}
         netbios name = ${config.networking.hostName}
         security = user 
-        hosts allow = 192.168.10. 192.168.20. 127.0.0.1 localhost 192.168.88.
+        hosts allow = 192.168.10. 192.168.20. 127.0.0.1 localhost 192.168.88. 10.0.
         hosts deny = 0.0.0.0/0
         guest account = nobody
         map to guest = bad user
+        encrypt passwords = yes
     '';
         enable = true;
         shares = publicShares // privateShares;
@@ -78,4 +85,5 @@ in
         enable = true;
         openFirewall = true;
     };
+
 }
