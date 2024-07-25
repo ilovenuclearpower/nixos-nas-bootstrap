@@ -10,7 +10,8 @@ let
     ];
 
     destinationDirectory = "/path/to/remote/directory";
-
+    ## Replace with your remote backup host
+    sshHost = "fm2096.rsync.net";
     sshKeyPath = "/home/ranka/.ssh/id_ed25519";
     sshKeyService = {
         enable = true;
@@ -33,7 +34,7 @@ in
             User = "ranka";
             ExecStart = ''
                 for dataset in ${toString sourceDatasets}; do
-                    rsync -avz -e "ssh -i /home/ranka/.ssh/id_ed25519" "$dataset" "${sshUser}@${sshHost}:${config.networking.hostName}"
+                    rsync -avz -e "ssh -i /home/ranka/.ssh/id_ed25519" "$dataset" "${sshHost}:${config.networking.hostName}/$dataset";
                 done
             '';
         };
