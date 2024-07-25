@@ -10,7 +10,7 @@
         ./configuration.nix
         ./users.nix
         ./nfs.nix
-        ./rsync.nix
+        /rsync.nix
         vscode-server.nixosModules.default
         ({ config, pkgs, ...}: {
           services.vscode-server.enable = true;

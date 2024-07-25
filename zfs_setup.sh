@@ -119,3 +119,7 @@ sudo zfs create -o mountpoint=legacy -o recordsize=524288  galaxy-$(hostname)/fi
 sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/nix
 sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/frontier
 sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/wilds
+sudo zfs set com.sun:auto-snapshot=true galaxy-$(hostname)/frontier
+sudo zfs set com.sun:auto-snapshot=true galaxy-$(hostname)/wilds
+sudo zfs set com.sun:auto-snapshot=true galaxy-$(hostname)/apps
+sudo zfs set com.sun:auto-snapshot=true galaxy-$(hostname)/nix

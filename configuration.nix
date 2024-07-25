@@ -47,6 +47,7 @@
       fsType = "zfs";
     };
   };
+    services.zfs.autoSnapshot.enable = true;
 
     systemd.services.set-fs-ownership = {
     description = "Set ownership of file systems";

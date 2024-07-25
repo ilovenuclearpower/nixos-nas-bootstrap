@@ -4,9 +4,9 @@
 
 let
     sourceDatasets = [
-        "/apps"
-        "/frontier"
-        "/wilds"
+        "galaxy-${config.networking.hostName}/apps"
+        "galaxy-${config.networking.hostName}/frontier"
+        "galaxy-${config.networking.hostName}/wilds"
     ];
 
     destinationDirectory = "/path/to/remote/directory";
@@ -27,16 +27,17 @@ let
 in
 {
     
-    services.systemd.services.rsync = {
+    services.systemd.services.snapshots = {
         enable = true;
-        description = "Rsync filesystems to remote host";
+        description = "ZFS Send Snapshots to remote host";
         serviceConfig = {
-            User = "ranka";
             ExecStart = ''
-                for dataset in ${toString sourceDatasets}; do
-                    rsync -avz -e "ssh -i /home/ranka/.ssh/id_ed25519" "$dataset" "${sshHost}:${config.networking.hostName}/$dataset";
-                done
+                /etc/nixos/snapshots.sh ${sshHost} ${sshKeyPath} "zfs-auto-snap_hourly" ${sourceDatasets}
             '';
+            Timer = {
+                OnCalendar = "*-*-* *:00:00";
+                Persistent = true;
+            };
         };
     };
     services.systemd.services.ranka-ssh-key = sshKeyService;
