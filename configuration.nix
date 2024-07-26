@@ -47,7 +47,71 @@
       fsType = "zfs";
     };
   };
-    services.zfs.autoSnapshot.enable = true;
+
+    services.sanoid = 
+    let
+        zfs_datasets = [
+      "galaxy-nixos/apps"
+      "galaxy-nixos/files"
+      "galaxy-nixos/media"
+      "galaxy-nixos/nix"
+      "galaxy-nixos/frontier"
+      "galaxy-nixos/wilds"
+
+    ];
+      remoteHost = "fm2096.rsync.net";
+      remoteUser = "fm2096";
+    in {
+      enable = true;
+      templates.backup = {
+          hourly = 36;
+          daily = 30;
+          monthly = 3;
+          autoprune = true;
+          autosnap = true;
+      };
+      datasets = builtins.listToAttrs (map 
+        (dataset: 
+          { name = dataset; value = {
+            useTemplate = [ "backup" ];
+      };
+      }) zfs_datasets);
+    };
+    services.syncoid =
+    let
+      zfs_datasets = [
+      "galaxy-nixos/apps"
+      "galaxy-nixos/files"
+      "galaxy-nixos/nix"
+      "galaxy-nixos/frontier"
+      "galaxy-nixos/wilds"
+    ];
+      remoteHost = "fm2096.rsync.net";
+      remoteUser = "fm2096";
+    in
+    { 
+      enable = true;
+      sshKey = "/home/root/.ssh/backup";
+      localSourceAllow = [
+        "bookmark" "hold" "send" "snapshot" "mount" "destroy"
+        "compression" "recordsize"
+      ];
+      localTargetAllow = [
+        "change-key" "compression" "create" "mount" "mountpoint"
+        "receive" "rollback" "destroy" "recordsize"
+      ]; 
+      commands = builtins.listToAttrs (map 
+        (dataset: 
+          { 
+          name = dataset; 
+          value = {
+            source = "${dataset}";
+            target = "${remoteUser}@${remoteHost}:${dataset}";
+            recursive = true;
+          }; 
+          }
+        ) zfs_datasets);
+    };
 
     systemd.services.set-fs-ownership = {
     description = "Set ownership of file systems";
@@ -82,7 +146,6 @@
       RemainAfterExit = true;
     };
   };
-
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
     environment.systemPackages = with pkgs; [ (python3.withPackages(ps: with ps; [
     numpy
@@ -102,6 +165,8 @@
     git
     vim
     talosctl
+    openssh
+    inetutils
 #    buildEnv {
 #      name = "bootstrap-env";
 #      paths = [ (pkgs.writeTextFile {

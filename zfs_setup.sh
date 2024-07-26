@@ -1,4 +1,5 @@
 #!/bin/sh
+DATASETS=("galaxy-$(hostname)/apps" "galaxy-$(hostname)/media" "galaxy-$(hostname)/files" "galaxy-$(hostname)/nix" "galaxy-$(hostname)/frontier" "galaxy-$(hostname)/wilds")
 function check_zfs_pools() {
     local pool_list=$(zpool list -H -o name | tr '\n' ' ')
     if [ -z "$pool_list" ]; then
@@ -109,17 +110,20 @@ function create_zfs_pools() {
 }
 create_zfs_pools
 # Create the 'apps' dataset with a record size of 4K
-sudo zfs create -o mountpoint=legacy -o recordsize=4096 galaxy-$(hostname)/apps
 
-# Create the 'media' dataset with a record size of 512K
-sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/media
-
-# Create the 'files' dataset with a record size of 32K
-sudo zfs create -o mountpoint=legacy -o recordsize=524288  galaxy-$(hostname)/files
-sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/nix
-sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/frontier
-sudo zfs create -o mountpoint=legacy -o recordsize=524288 galaxy-$(hostname)/wilds
-sudo zfs set com.sun:auto-snapshot=true galaxy-$(hostname)/frontier
-sudo zfs set com.sun:auto-snapshot=true galaxy-$(hostname)/wilds
-sudo zfs set com.sun:auto-snapshot=true galaxy-$(hostname)/apps
-sudo zfs set com.sun:auto-snapshot=true galaxy-$(hostname)/nix
+for dataset in "${DATASETS[@]}"; do
+    if [ "$dataset" == "galaxy-$(hostname)/apps" ]; then
+        sudo zfs create -o mountpoint=legacy -o recordsize=4096 $dataset
+        sudo zfs set com.sun:auto-snapshot=true $dataset
+        sudo zfs set aclinherit=passthrough $dataset
+        continue
+    fi
+    sudo zfs create -o mountpoint=legacy -o recordsize=524288 $dataset
+    sudo zfs set com.sun:auto-snapshot=true $dataset
+    sudo zfs set aclinherit=passthrough $dataset
+done
+sudo zfs set aclinherit=passthrough galaxy-$(hostname)/frontier
+sudo zfs set aclinherit=passthrough galaxy-$(hostname)/wilds
+sudo zfs set aclinherit=passthrough galaxy-$(hostname)/apps
+sudo zfs set aclinherit=passthrough galaxy-$(hostname)/files
+sudo zfs set aclinherit=passthrough galaxy-$(hostname)/nix
